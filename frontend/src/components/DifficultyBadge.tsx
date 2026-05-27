@@ -1,9 +1,9 @@
 import type { Difficulty } from "@/types";
 
 const styles: Record<Difficulty, string> = {
-  easy: "bg-green-50 text-green-700 border-green-200",
-  moderate: "bg-amber-50 text-amber-700 border-amber-200",
-  hard: "bg-red-50 text-red-700 border-red-200",
+  easy: "bg-green-50 text-green-700 border-green-200 badge-easy",
+  moderate: "bg-amber-50 text-amber-700 border-amber-200 badge-moderate",
+  hard: "bg-red-50 text-red-700 border-red-200 badge-hard",
 };
 
 const labels: Record<Difficulty, string> = {

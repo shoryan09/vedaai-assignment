@@ -28,3 +28,13 @@ export const getAssignment = async (id: string): Promise<Assignment> => {
 export const deleteAssignment = async (id: string): Promise<void> => {
   await api.delete(`/assignments/${id}`);
 };
+
+
+export const uploadFile = async (file: File): Promise<{ text: string; filename: string }> => {
+  const formData = new FormData();
+  formData.append("file", file);
+  const res = await api.post("/upload", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return res.data;
+};

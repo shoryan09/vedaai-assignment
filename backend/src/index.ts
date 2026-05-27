@@ -48,8 +48,9 @@ const start = async () => {
 
   // Mount routes (dynamic import so io is exported first)
   const assignmentsRouter = (await import("./routes/assignments")).default;
-  app.use("/api/assignments", assignmentsRouter);
-
+const uploadRouter = (await import("./routes/upload")).default;
+app.use("/api/assignments", assignmentsRouter);
+app.use("/api/upload", uploadRouter);
   // Start worker in same process
   await import("./workers/generationWorker");
 

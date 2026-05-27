@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, use, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Download, RefreshCw } from "lucide-react";
 import Topbar from "@/components/Topbar";
@@ -28,8 +28,9 @@ export default function AssignmentDetailPage({ params }: PageProps) {
 
   const [assignment, setAssignment] = useState<Assignment | null>(null);
   const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(false);
+  const paperRef = useRef<HTMLDivElement>(null);
 
-  // Fetch assignment
   const fetchAssignment = async () => {
     try {
       const data = await getAssignment(id);
@@ -53,7 +54,6 @@ export default function AssignmentDetailPage({ params }: PageProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  // Socket listeners
   useEffect(() => {
     const socket = getSocket();
 
@@ -65,7 +65,7 @@ export default function AssignmentDetailPage({ params }: PageProps) {
     const onComplete = (data: { assignmentId: string; paper: any }) => {
       if (data.assignmentId === id) {
         updatePaper(data.paper);
-        fetchAssignment(); // refresh full assignment
+        fetchAssignment();
       }
     };
 
@@ -85,6 +85,33 @@ export default function AssignmentDetailPage({ params }: PageProps) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  const handleDownload = async () => {
+    if (!paperRef.current || !assignment) return;
+    setDownloading(true);
+    const node = paperRef.current;
+    node.classList.add("pdf-export-mode");
+    try {
+      const html2pdf = (await import("html2pdf.js")).default;
+      await html2pdf()
+        .set({
+          margin: [12, 12, 12, 12],
+          filename: `${assignment.title.replace(/\s+/g, "_")}.pdf`,
+          image: { type: "jpeg", quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+          pagebreak: { mode: ["avoid-all", "css", "legacy"] },
+        })
+        .from(node)
+        .save();
+    } catch (err) {
+      console.error("PDF download failed", err);
+      alert("Failed to generate PDF. Please try again.");
+    } finally {
+      node.classList.remove("pdf-export-mode");
+      setDownloading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -106,7 +133,6 @@ export default function AssignmentDetailPage({ params }: PageProps) {
     );
   }
 
-  // Show generating state if still processing
   if (assignment.status === "pending" || assignment.status === "processing") {
     return (
       <>
@@ -138,9 +164,9 @@ export default function AssignmentDetailPage({ params }: PageProps) {
   return (
     <>
       <Topbar title="Create New" />
-      <div className="flex-1 px-6 md:px-10 py-6 max-w-4xl mx-auto w-full">
+      <div className="flex-1 px-4 md:px-10 py-4 md:py-6 max-w-4xl mx-auto w-full">
         {/* Header bar */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-4 md:mb-6">
           <button
             onClick={() => router.push("/assignments")}
             className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900"
@@ -156,9 +182,13 @@ export default function AssignmentDetailPage({ params }: PageProps) {
               <RefreshCw size={14} />
               Regenerate
             </button>
-            <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-[#1a1a1a] hover:bg-black rounded-lg transition">
+            <button
+              onClick={handleDownload}
+              disabled={downloading}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-[#1a1a1a] hover:bg-black rounded-lg transition disabled:opacity-60"
+            >
               <Download size={14} />
-              Download as PDF
+              {downloading ? "Preparing..." : "Download as PDF"}
             </button>
           </div>
         </div>
@@ -166,15 +196,16 @@ export default function AssignmentDetailPage({ params }: PageProps) {
         {/* AI Intro */}
         <div className="bg-orange-50 border border-orange-100 rounded-lg p-4 mb-6">
           <p className="text-sm text-gray-700">
-            <span className="font-medium">Certainly!</span> Here&apos;s a customized question paper for <strong>{assignment.title}</strong>.
+            <span className="font-medium">Certainly!</span> Here&apos;s a customized question paper for{" "}
+            <strong>{assignment.title}</strong>.
           </p>
         </div>
 
-        {/* Paper */}
-        <div className="bg-white border border-gray-200 rounded-lg p-8 md:p-12">
+        {/* Paper (this is what gets exported to PDF) */}
+        <div ref={paperRef} className="bg-white border border-gray-200 rounded-lg p-5 md:p-12">
           {/* School Header */}
           <div className="text-center mb-6 pb-6 border-b border-gray-200">
-            <h1 className="text-xl font-bold text-gray-900 mb-1">Delhi Public School, Sector-4, Bokaro</h1>
+            <h1 className="text-lg md:text-xl font-bold text-gray-900 mb-1">Delhi Public School, Sector-4, Bokaro</h1>
             <p className="text-sm text-gray-700">Subject: {assignment.title}</p>
             <p className="text-sm text-gray-700">Class: 8th</p>
           </div>
@@ -189,9 +220,16 @@ export default function AssignmentDetailPage({ params }: PageProps) {
 
           {/* Student Info */}
           <div className="space-y-2 mb-8 text-sm text-gray-700">
-            <p>Name: <span className="inline-block border-b border-gray-300 min-w-[200px] ml-2"></span></p>
-            <p>Roll Number: <span className="inline-block border-b border-gray-300 min-w-[200px] ml-2"></span></p>
-            <p>Class: 5th &nbsp;&nbsp; Section: <span className="inline-block border-b border-gray-300 min-w-[100px] ml-2"></span></p>
+            <p>
+              Name: <span className="inline-block border-b border-gray-300 min-w-[200px] ml-2"></span>
+            </p>
+            <p>
+              Roll Number: <span className="inline-block border-b border-gray-300 min-w-[200px] ml-2"></span>
+            </p>
+            <p>
+              Class: 5th &nbsp;&nbsp; Section:{" "}
+              <span className="inline-block border-b border-gray-300 min-w-[100px] ml-2"></span>
+            </p>
           </div>
 
           {/* Sections */}
@@ -206,7 +244,9 @@ export default function AssignmentDetailPage({ params }: PageProps) {
                     <div className="flex flex-wrap items-start gap-2">
                       <DifficultyBadge difficulty={q.difficulty} />
                       <span className="flex-1 min-w-[200px]">{q.text}</span>
-                      <span className="text-xs text-gray-500 font-medium whitespace-nowrap">[{q.marks} Marks]</span>
+                      <span className="text-xs text-gray-500 font-medium whitespace-nowrap">
+                        [{q.marks} Marks]
+                      </span>
                     </div>
                   </li>
                 ))}
