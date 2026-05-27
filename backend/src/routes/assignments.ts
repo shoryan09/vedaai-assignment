@@ -1,4 +1,5 @@
 import { Router, Request, Response } from "express";
+import { redisConnection } from "../config/redis";
 import { z } from "zod";
 import Assignment from "../models/Assignment";
 import { generationQueue } from "../queues/generationQueue";
@@ -45,6 +46,8 @@ router.post("/", async (req: Request, res: Response) => {
     assignment.jobId = job.id;
     await assignment.save();
 
+    await redisConnection.del("assignments:list");
+
     return res.status(202).json({
       assignmentId: assignment._id,
       jobId: job.id,
@@ -58,7 +61,14 @@ router.post("/", async (req: Request, res: Response) => {
 
 router.get("/", async (_req: Request, res: Response) => {
   try {
+    const cacheKey = "assignments:list";
+    const cached = await redisConnection.get(cacheKey);
+    if (cached) {
+      return res.json(JSON.parse(cached));
+    }
+
     const assignments = await Assignment.find().sort({ createdAt: -1 }).limit(50);
+    await redisConnection.setex(cacheKey, 60, JSON.stringify(assignments));
     return res.json(assignments);
   } catch (err) {
     return res.status(500).json({ error: "Internal error" });
@@ -79,6 +89,9 @@ router.delete("/:id", async (req: Request, res: Response) => {
   try {
     const result = await Assignment.findByIdAndDelete(req.params.id);
     if (!result) return res.status(404).json({ error: "Not found" });
+
+    await redisConnection.del("assignments:list");
+
     return res.json({ deleted: true });
   } catch (err) {
     return res.status(500).json({ error: "Internal error" });
