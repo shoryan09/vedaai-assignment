@@ -16,6 +16,7 @@ export type PdfStatus = "none" | "pending" | "processing" | "completed" | "faile
 
 export interface IAssignment extends Document {
   title: string;
+  className?: string;
   dueDate: Date;
   questionTypes: { type: string; count: number; marks: number }[];
   additionalInstructions?: string;
@@ -50,6 +51,7 @@ const SectionSchema = new Schema<ISection>({
 const AssignmentSchema = new Schema<IAssignment>(
   {
     title: { type: String, required: true },
+    className: { type: String },
     dueDate: { type: Date, required: true },
     questionTypes: [
       {

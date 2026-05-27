@@ -232,7 +232,7 @@ export default function AssignmentDetailPage({ params }: PageProps) {
           <div className="text-center mb-6 pb-6 border-b border-gray-200">
             <h1 className="text-lg md:text-xl font-bold text-gray-900 mb-1">Delhi Public School, Sector-4, Bokaro</h1>
             <p className="text-sm text-gray-700">Subject: {assignment.title}</p>
-            <p className="text-sm text-gray-700">Class: 8th</p>
+            {assignment.className && <p className="text-sm text-gray-700">Class: {assignment.className}</p>}
           </div>
 
           {/* Time + Marks */}
@@ -252,7 +252,7 @@ export default function AssignmentDetailPage({ params }: PageProps) {
               Roll Number: <span className="inline-block border-b border-gray-300 min-w-[200px] ml-2"></span>
             </p>
             <p>
-              Class: 5th &nbsp;&nbsp; Section:{" "}
+              Section:{" "}
               <span className="inline-block border-b border-gray-300 min-w-[100px] ml-2"></span>
             </p>
           </div>
@@ -268,7 +268,7 @@ export default function AssignmentDetailPage({ params }: PageProps) {
                   <li key={qIdx} className="text-sm text-gray-800 leading-relaxed">
                     <div className="flex flex-wrap items-start gap-2">
                       <DifficultyBadge difficulty={q.difficulty} />
-                      <span className="flex-1 min-w-[200px]">{q.text}</span>
+                      <span className="flex-1 min-w-[200px] whitespace-pre-line">{q.text}</span>
                       <span className="text-xs text-gray-500 font-medium whitespace-nowrap">
                         [{q.marks} Marks]
                       </span>

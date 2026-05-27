@@ -8,6 +8,7 @@ export const questionTypeSchema = z.object({
 
 export const createAssignmentSchema = z.object({
   title: z.string().min(1, "Title is required"),
+  className: z.string().optional(),
   dueDate: z.string().min(1, "Due date is required"),
   questionTypes: z.array(questionTypeSchema).min(1, "Add at least one question type"),
   additionalInstructions: z.string().optional(),

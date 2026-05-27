@@ -32,6 +32,7 @@ export interface QuestionType {
 export interface Assignment {
   _id: string;
   title: string;
+  className?: string;
   dueDate: string;
   questionTypes: QuestionType[];
   additionalInstructions?: string;
@@ -45,6 +46,7 @@ export interface Assignment {
 
 export interface CreateAssignmentInput {
   title: string;
+  className?: string;
   dueDate: string;
   questionTypes: QuestionType[];
   additionalInstructions?: string;

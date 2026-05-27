@@ -9,6 +9,7 @@ const router = Router();
 
 const createSchema = z.object({
   title: z.string().min(1, "Title is required"),
+  className: z.string().optional(),
   dueDate: z.string().refine((v) => !isNaN(Date.parse(v)), "Invalid date"),
   questionTypes: z
     .array(
@@ -108,7 +109,6 @@ router.post("/:id/pdf", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Paper not yet generated" });
     }
 
-    // If already cached, return immediately
     if (assignment.pdfStatus === "completed" && assignment.pdfBuffer) {
       return res.json({
         status: "completed",

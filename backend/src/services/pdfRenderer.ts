@@ -45,9 +45,11 @@ export const renderPaperToBuffer = (assignment: IAssignment): Promise<Buffer> =>
         .moveDown(0.3)
         .font("Helvetica")
         .fontSize(11)
-        .text(`Subject: ${assignment.title}`, { align: "center" })
-        .text("Class: 8th", { align: "center" });
+        .text(`Subject: ${assignment.title}`, { align: "center" });
 
+if (assignment.className) {
+  doc.text(`Class: ${assignment.className}`, { align: "center" });
+}
       doc.moveDown(0.8);
       doc
         .strokeColor(COLOR.border)
@@ -84,9 +86,9 @@ export const renderPaperToBuffer = (assignment: IAssignment): Promise<Buffer> =>
       };
 
       drawLine("Name:");
-      drawLine("Roll Number:");
-      doc.font("Helvetica").fontSize(11).text("Class: 5th    Section: ___________");
-      doc.moveDown(1);
+drawLine("Roll Number:");
+doc.font("Helvetica").fontSize(11).text("Section: ___________");
+doc.moveDown(1);
 
       // Sections
       let counter = 0;

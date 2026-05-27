@@ -20,6 +20,7 @@ export default function NewAssignmentPage() {
   const { setCurrentJobId, setGenerationStatus } = useAssignmentStore();
 
   const [title, setTitle] = useState("");
+  const [className, setClassName] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [additionalInstructions, setAdditionalInstructions] = useState("");
   const [fileContent, setFileContent] = useState<string>("");
@@ -84,6 +85,7 @@ export default function NewAssignmentPage() {
   const handleSubmit = async () => {
     const data = {
       title,
+      className: className || undefined,
       dueDate,
       questionTypes,
       additionalInstructions: additionalInstructions || undefined,
@@ -127,12 +129,10 @@ export default function NewAssignmentPage() {
           <p className="text-sm text-gray-500">Set up a new assignment for your classes.</p>
         </div>
 
-        {/* Assignment Details Section */}
         <div className="bg-white border border-gray-200 rounded-lg p-4 md:p-6 mb-4 md:mb-6">
           <h3 className="font-semibold text-gray-900 mb-1">Assignment Details</h3>
           <p className="text-xs text-gray-500 mb-5">Basic information about your assignment.</p>
 
-          {/* Title */}
           <div className="mb-5">
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Title</label>
             <input
@@ -145,7 +145,19 @@ export default function NewAssignmentPage() {
             {errors.title && <p className="text-xs text-red-600 mt-1">{errors.title}</p>}
           </div>
 
-          {/* File upload */}
+          <div className="mb-5">
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              Class <span className="text-gray-400">(optional)</span>
+            </label>
+            <input
+              type="text"
+              value={className}
+              onChange={(e) => setClassName(e.target.value)}
+              placeholder="e.g. 8th, Class 10, Grade 12"
+              className="w-full md:w-64 px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-gray-900 transition"
+            />
+          </div>
+
           <div className="mb-5">
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
               Upload Reference Material <span className="text-gray-400">(optional)</span>
@@ -172,7 +184,6 @@ export default function NewAssignmentPage() {
             </label>
           </div>
 
-          {/* Due Date */}
           <div className="mb-5">
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Due Date</label>
             <input
@@ -184,7 +195,6 @@ export default function NewAssignmentPage() {
             {errors.dueDate && <p className="text-xs text-red-600 mt-1">{errors.dueDate}</p>}
           </div>
 
-          {/* Question Types Header (desktop only) */}
           <div className="hidden md:grid grid-cols-12 gap-3 mb-2 text-xs font-medium text-gray-500">
             <div className="col-span-6">Question Type</div>
             <div className="col-span-3">No. of Questions</div>
@@ -192,13 +202,11 @@ export default function NewAssignmentPage() {
             <div className="col-span-1"></div>
           </div>
 
-          {/* Question Type Rows */}
           {questionTypes.map((row, index) => (
             <div
               key={index}
               className="mb-4 md:mb-3 p-3 md:p-0 bg-gray-50 md:bg-transparent rounded-lg md:rounded-none"
             >
-              {/* Desktop layout */}
               <div className="hidden md:grid grid-cols-12 gap-3 items-center">
                 <div className="col-span-6 relative">
                   <select
@@ -235,7 +243,6 @@ export default function NewAssignmentPage() {
                 </button>
               </div>
 
-              {/* Mobile layout */}
               <div className="md:hidden space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-medium text-gray-500">Question Type</label>
@@ -303,7 +310,6 @@ export default function NewAssignmentPage() {
           </div>
         </div>
 
-        {/* Additional Information */}
         <div className="bg-white border border-gray-200 rounded-lg p-4 md:p-6 mb-4 md:mb-6">
           <label className="block text-sm font-semibold text-gray-900 mb-1">
             Additional Information <span className="text-gray-400 font-normal">(For better output)</span>
@@ -320,7 +326,6 @@ export default function NewAssignmentPage() {
           />
         </div>
 
-        {/* Footer Actions */}
         <div className="flex items-center justify-between gap-3">
           <button
             onClick={() => router.back()}
