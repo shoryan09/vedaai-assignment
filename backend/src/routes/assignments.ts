@@ -3,6 +3,7 @@ import { redisConnection } from "../config/redis";
 import { z } from "zod";
 import Assignment from "../models/Assignment";
 import { generationQueue } from "../queues/generationQueue";
+import { pdfQueue } from "../queues/pdfQueue";
 
 const router = Router();
 
@@ -94,6 +95,60 @@ router.delete("/:id", async (req: Request, res: Response) => {
 
     return res.json({ deleted: true });
   } catch (err) {
+    return res.status(500).json({ error: "Internal error" });
+  }
+});
+
+// Trigger PDF generation
+router.post("/:id/pdf", async (req: Request, res: Response) => {
+  try {
+    const assignment = await Assignment.findById(req.params.id);
+    if (!assignment) return res.status(404).json({ error: "Not found" });
+    if (assignment.status !== "completed" || !assignment.generatedPaper) {
+      return res.status(400).json({ error: "Paper not yet generated" });
+    }
+
+    // If already cached, return immediately
+    if (assignment.pdfStatus === "completed" && assignment.pdfBuffer) {
+      return res.json({
+        status: "completed",
+        downloadUrl: `/api/assignments/${assignment._id}/pdf`,
+        cached: true,
+      });
+    }
+
+    assignment.pdfStatus = "pending";
+    await assignment.save();
+
+    const job = await pdfQueue.add("render", { assignmentId: assignment._id.toString() });
+    assignment.pdfJobId = job.id;
+    await assignment.save();
+
+    return res.status(202).json({
+      status: "pending",
+      pdfJobId: job.id,
+    });
+  } catch (err) {
+    console.error("PDF enqueue failed:", err);
+    return res.status(500).json({ error: "Internal error" });
+  }
+});
+
+// Download PDF binary
+router.get("/:id/pdf", async (req: Request, res: Response) => {
+  try {
+    const assignment = await Assignment.findById(req.params.id);
+    if (!assignment) return res.status(404).json({ error: "Not found" });
+    if (assignment.pdfStatus !== "completed" || !assignment.pdfBuffer) {
+      return res.status(404).json({ error: "PDF not ready" });
+    }
+
+    const filename = `${assignment.title.replace(/\s+/g, "_")}.pdf`;
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    return res.send(assignment.pdfBuffer);
+  } catch (err) {
+    console.error("PDF download failed:", err);
     return res.status(500).json({ error: "Internal error" });
   }
 });

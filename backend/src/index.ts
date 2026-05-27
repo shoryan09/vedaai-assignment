@@ -33,6 +33,11 @@ io.on("connection", (socket) => {
     console.log(`Socket ${socket.id} subscribed to job:${jobId}`);
   });
 
+  socket.on("subscribePdf", (jobId: string) => {
+    socket.join(`pdf:${jobId}`);
+    console.log(`Socket ${socket.id} subscribed to pdf:${jobId}`);
+  });
+
   socket.on("disconnect", () => {
     console.log("🔌 Client disconnected:", socket.id);
   });
@@ -48,11 +53,14 @@ const start = async () => {
 
   // Mount routes (dynamic import so io is exported first)
   const assignmentsRouter = (await import("./routes/assignments")).default;
-const uploadRouter = (await import("./routes/upload")).default;
-app.use("/api/assignments", assignmentsRouter);
-app.use("/api/upload", uploadRouter);
-  // Start worker in same process
+  const uploadRouter = (await import("./routes/upload")).default;
+  app.use("/api/assignments", assignmentsRouter);
+  app.use("/api/upload", uploadRouter);
+
+  // Start workers in same process
   await import("./workers/generationWorker");
+  const { startPdfWorker } = await import("./workers/pdfWorker");
+  startPdfWorker();
 
   server.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);

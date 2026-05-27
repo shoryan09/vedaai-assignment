@@ -12,6 +12,8 @@ export interface ISection {
   questions: IQuestion[];
 }
 
+export type PdfStatus = "none" | "pending" | "processing" | "completed" | "failed";
+
 export interface IAssignment extends Document {
   title: string;
   dueDate: Date;
@@ -20,6 +22,10 @@ export interface IAssignment extends Document {
   fileContent?: string;
   status: "pending" | "processing" | "completed" | "failed";
   jobId?: string;
+  pdfStatus: PdfStatus;
+  pdfJobId?: string;
+  pdfBuffer?: Buffer;
+  pdfGeneratedAt?: Date;
   generatedPaper?: {
     sections: ISection[];
     answerKey?: string;
@@ -60,6 +66,14 @@ const AssignmentSchema = new Schema<IAssignment>(
       default: "pending",
     },
     jobId: String,
+    pdfStatus: {
+      type: String,
+      enum: ["none", "pending", "processing", "completed", "failed"],
+      default: "none",
+    },
+    pdfJobId: String,
+    pdfBuffer: Buffer,
+    pdfGeneratedAt: Date,
     generatedPaper: {
       sections: [SectionSchema],
       answerKey: String,

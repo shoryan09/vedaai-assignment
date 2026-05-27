@@ -18,3 +18,8 @@ export const subscribeToJob = (jobId: string) => {
   const s = getSocket();
   s.emit("subscribe", jobId);
 };
+
+export const subscribeToPdfJob = (pdfJobId: string) => {
+  const s = getSocket();
+  s.emit("subscribePdf", pdfJobId);
+};

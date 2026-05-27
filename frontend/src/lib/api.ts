@@ -38,3 +38,16 @@ export const uploadFile = async (file: File): Promise<{ text: string; filename: 
   });
   return res.data;
 };
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+
+export const requestPdf = async (
+  assignmentId: string
+): Promise<{ status: string; pdfJobId?: string; downloadUrl?: string; cached?: boolean }> => {
+  const res = await api.post(`/assignments/${assignmentId}/pdf`);
+  return res.data;
+};
+
+export const getPdfDownloadUrl = (assignmentId: string): string => {
+  return `${API_BASE}/api/assignments/${assignmentId}/pdf`;
+};

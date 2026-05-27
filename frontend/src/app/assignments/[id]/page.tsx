@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState, use, useRef } from "react";
+import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Download, RefreshCw } from "lucide-react";
 import Topbar from "@/components/Topbar";
 import DifficultyBadge from "@/components/DifficultyBadge";
 import GeneratingState from "@/components/GeneratingState";
-import { getAssignment } from "@/lib/api";
-import { getSocket, subscribeToJob } from "@/lib/socket";
+import { getAssignment, requestPdf, getPdfDownloadUrl } from "@/lib/api";
+import { getSocket, subscribeToJob, subscribeToPdfJob } from "@/lib/socket";
 import { useAssignmentStore } from "@/store/assignmentStore";
 import type { Assignment } from "@/types";
 
@@ -28,8 +28,7 @@ export default function AssignmentDetailPage({ params }: PageProps) {
 
   const [assignment, setAssignment] = useState<Assignment | null>(null);
   const [loading, setLoading] = useState(true);
-  const [downloading, setDownloading] = useState(false);
-  const paperRef = useRef<HTMLDivElement>(null);
+  const [pdfStatus, setPdfStatus] = useState<"idle" | "pending" | "processing" | "ready" | "failed">("idle");
 
   const fetchAssignment = async () => {
     try {
@@ -74,42 +73,61 @@ export default function AssignmentDetailPage({ params }: PageProps) {
       alert(`Generation failed: ${data.error}`);
     };
 
+    const onPdfComplete = (data: { assignmentId: string; downloadUrl: string }) => {
+      if (data.assignmentId === id) {
+        setPdfStatus("ready");
+        triggerBrowserDownload(getPdfDownloadUrl(id));
+      }
+    };
+
+    const onPdfFailed = (data: { error: string }) => {
+      setPdfStatus("failed");
+      alert(`PDF generation failed: ${data.error}`);
+    };
+
     socket.on("job:progress", onProgress);
     socket.on("job:complete", onComplete);
     socket.on("job:failed", onFailed);
+    socket.on("pdf:complete", onPdfComplete);
+    socket.on("pdf:failed", onPdfFailed);
 
     return () => {
       socket.off("job:progress", onProgress);
       socket.off("job:complete", onComplete);
       socket.off("job:failed", onFailed);
+      socket.off("pdf:complete", onPdfComplete);
+      socket.off("pdf:failed", onPdfFailed);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  const triggerBrowserDownload = (url: string) => {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${assignment?.title?.replace(/\s+/g, "_") || "paper"}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   const handleDownload = async () => {
-    if (!paperRef.current || !assignment) return;
-    setDownloading(true);
-    const node = paperRef.current;
-    node.classList.add("pdf-export-mode");
+    if (!assignment) return;
+    setPdfStatus("pending");
     try {
-      const html2pdf = (await import("html2pdf.js")).default;
-      await html2pdf()
-        .set({
-          margin: [12, 12, 12, 12],
-          filename: `${assignment.title.replace(/\s+/g, "_")}.pdf`,
-          image: { type: "jpeg", quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
-          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-          pagebreak: { mode: ["avoid-all", "css", "legacy"] },
-        })
-        .from(node)
-        .save();
+      const result = await requestPdf(assignment._id);
+      if (result.cached) {
+        setPdfStatus("ready");
+        triggerBrowserDownload(getPdfDownloadUrl(assignment._id));
+        return;
+      }
+      if (result.pdfJobId) {
+        subscribeToPdfJob(result.pdfJobId);
+        setPdfStatus("processing");
+      }
     } catch (err) {
-      console.error("PDF download failed", err);
-      alert("Failed to generate PDF. Please try again.");
-    } finally {
-      node.classList.remove("pdf-export-mode");
-      setDownloading(false);
+      console.error("PDF request failed", err);
+      setPdfStatus("failed");
+      alert("Failed to start PDF generation.");
     }
   };
 
@@ -160,6 +178,13 @@ export default function AssignmentDetailPage({ params }: PageProps) {
   }
 
   const paper = assignment.generatedPaper!;
+  const isPdfBusy = pdfStatus === "pending" || pdfStatus === "processing";
+  const pdfButtonLabel =
+    pdfStatus === "pending"
+      ? "Queueing..."
+      : pdfStatus === "processing"
+      ? "Generating PDF..."
+      : "Download as PDF";
 
   return (
     <>
@@ -184,11 +209,11 @@ export default function AssignmentDetailPage({ params }: PageProps) {
             </button>
             <button
               onClick={handleDownload}
-              disabled={downloading}
+              disabled={isPdfBusy}
               className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-[#1a1a1a] hover:bg-black rounded-lg transition disabled:opacity-60"
             >
               <Download size={14} />
-              {downloading ? "Preparing..." : "Download as PDF"}
+              {pdfButtonLabel}
             </button>
           </div>
         </div>
@@ -201,8 +226,8 @@ export default function AssignmentDetailPage({ params }: PageProps) {
           </p>
         </div>
 
-        {/* Paper (this is what gets exported to PDF) */}
-        <div ref={paperRef} className="bg-white border border-gray-200 rounded-lg p-5 md:p-12">
+        {/* Paper */}
+        <div className="bg-white border border-gray-200 rounded-lg p-5 md:p-12">
           {/* School Header */}
           <div className="text-center mb-6 pb-6 border-b border-gray-200">
             <h1 className="text-lg md:text-xl font-bold text-gray-900 mb-1">Delhi Public School, Sector-4, Bokaro</h1>
