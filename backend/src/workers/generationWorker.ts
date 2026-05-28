@@ -28,7 +28,6 @@ const startWorker = async () => {
         await Assignment.findByIdAndUpdate(assignmentId, { status: "processing" });
         emitStage(job.id, "Building structured prompt...", 15);
 
-        // Tiny delay so frontend sees the stage transition smoothly
         await new Promise((r) => setTimeout(r, 200));
         emitStage(job.id, "Calling AI model...", 35);
 

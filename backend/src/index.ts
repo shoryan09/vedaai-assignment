@@ -51,13 +51,11 @@ const start = async () => {
   await connectDB();
   redisConnection.ping().then(() => console.log("✅ Redis ping OK"));
 
-  // Mount routes (dynamic import so io is exported first)
   const assignmentsRouter = (await import("./routes/assignments")).default;
   const uploadRouter = (await import("./routes/upload")).default;
   app.use("/api/assignments", assignmentsRouter);
   app.use("/api/upload", uploadRouter);
 
-  // Start workers in same process
   await import("./workers/generationWorker");
   const { startPdfWorker } = await import("./workers/pdfWorker");
   startPdfWorker();

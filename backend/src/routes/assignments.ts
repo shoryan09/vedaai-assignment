@@ -99,13 +99,12 @@ router.delete("/:id", async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Internal error" });
   }
 });
-// Regenerate paper (same params, fresh LLM call)
+
 router.post("/:id/regenerate", async (req: Request, res: Response) => {
   try {
     const assignment = await Assignment.findById(req.params.id);
     if (!assignment) return res.status(404).json({ error: "Not found" });
 
-    // Reset generation + PDF state
     assignment.status = "pending";
     assignment.generatedPaper = undefined;
     assignment.pdfStatus = "none";
@@ -138,7 +137,6 @@ router.post("/:id/regenerate", async (req: Request, res: Response) => {
   }
 });
 
-// Trigger PDF generation
 router.post("/:id/pdf", async (req: Request, res: Response) => {
   try {
     const assignment = await Assignment.findById(req.params.id);
@@ -172,7 +170,6 @@ router.post("/:id/pdf", async (req: Request, res: Response) => {
   }
 });
 
-// Download PDF binary
 router.get("/:id/pdf", async (req: Request, res: Response) => {
   try {
     const assignment = await Assignment.findById(req.params.id);

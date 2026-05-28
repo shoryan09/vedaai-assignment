@@ -21,7 +21,7 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Mobile overlay */}
+      
       {mobileNavOpen && (
         <div
           onClick={() => setMobileNavOpen(false)}
@@ -38,7 +38,7 @@ export default function Sidebar() {
           md:translate-x-0
         `}
       >
-        {/* Logo */}
+        
         <div className="px-6 py-6 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-md bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
@@ -55,7 +55,6 @@ export default function Sidebar() {
           </button>
         </div>
 
-        {/* Create Assignment Button */}
         <div className="px-4 mb-4">
           <Link
             href="/assignments/new"
@@ -67,7 +66,6 @@ export default function Sidebar() {
           </Link>
         </div>
 
-        {/* Nav */}
         <nav className="flex-1 px-3 space-y-1">
           {navItems.map((item) => {
             const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
@@ -95,7 +93,6 @@ export default function Sidebar() {
           })}
         </nav>
 
-        {/* Settings */}
         <div className="px-3 py-2">
           <Link
             href="/settings"
@@ -107,7 +104,6 @@ export default function Sidebar() {
           </Link>
         </div>
 
-        {/* School Card */}
         <div className="p-4 m-3 bg-gray-50 rounded-lg flex items-center gap-3">
           <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center">
             <span className="text-green-700 font-semibold text-sm">DP</span>

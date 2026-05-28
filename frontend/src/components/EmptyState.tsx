@@ -6,7 +6,7 @@ import { Plus, SearchX } from "lucide-react";
 export default function EmptyState() {
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
-      {/* Illustration */}
+      
       <div className="relative mb-8">
         <div className="w-32 h-32 rounded-2xl bg-gray-100 flex items-center justify-center">
           <SearchX size={48} className="text-gray-400" strokeWidth={1.5} />

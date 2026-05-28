@@ -35,7 +35,6 @@ export const renderPaperToBuffer = (assignment: IAssignment): Promise<Buffer> =>
         return;
       }
 
-      // School header
       doc
         .fillColor(COLOR.text)
         .font("Helvetica-Bold")
@@ -59,7 +58,6 @@ if (assignment.className) {
         .stroke();
       doc.moveDown(0.8);
 
-      // Time + Marks
       const startY = doc.y;
       doc.fontSize(11).text("Time Allowed: 45 minutes", { continued: false });
       doc.text(`Maximum Marks: ${paper.totalMarks}`, doc.page.width - doc.page.margins.right - 120, startY, {
@@ -71,7 +69,6 @@ if (assignment.className) {
       doc.text("All questions are compulsory unless stated otherwise.");
       doc.moveDown(0.8);
 
-      // Student info lines
       const drawLine = (label: string, width = 200) => {
         const y = doc.y + 12;
         doc.font("Helvetica").fontSize(11).text(label, { continued: true });
@@ -90,10 +87,9 @@ drawLine("Roll Number:");
 doc.font("Helvetica").fontSize(11).text("Section: ___________");
 doc.moveDown(1);
 
-      // Sections
       let counter = 0;
       paper.sections.forEach((section) => {
-        // Check page break
+        
         if (doc.y > doc.page.height - 200) doc.addPage();
 
         doc.font("Helvetica-Bold").fontSize(12).text(section.title, { align: "center" });
@@ -109,10 +105,8 @@ doc.moveDown(1);
           const xStart = doc.page.margins.left;
           const y = doc.y;
 
-          // Question number
           doc.font("Helvetica").fontSize(11).fillColor(COLOR.text).text(`${counter}.`, xStart, y, { continued: false });
 
-          // Badge
           const badgeX = xStart + 22;
           const badgeY = y;
           const badgeWidth = doc.widthOfString(b.label) + 10;
@@ -121,7 +115,6 @@ doc.moveDown(1);
           doc.roundedRect(badgeX, badgeY - 2, badgeWidth, badgeHeight, 3).fillAndStroke(b.bg, b.bg);
           doc.fillColor(b.fg).font("Helvetica-Bold").fontSize(8).text(b.label, badgeX + 5, badgeY + 1);
 
-          // Question text
           const textX = badgeX + badgeWidth + 6;
           const textWidth = doc.page.width - doc.page.margins.right - textX - 60;
           doc.fillColor(COLOR.text).font("Helvetica").fontSize(11).text(q.text, textX, y, {
@@ -129,7 +122,6 @@ doc.moveDown(1);
           });
           const textEndY = doc.y;
 
-          // Marks (right-aligned)
           doc.fillColor(COLOR.muted).fontSize(9).text(`[${q.marks} Marks]`, doc.page.width - doc.page.margins.right - 55, y);
           doc.fillColor(COLOR.text);
 
@@ -144,7 +136,6 @@ doc.moveDown(1);
       doc.font("Helvetica-Bold").fontSize(11).text("End of Question Paper");
       doc.moveDown(0.8);
 
-      // Answer key
       if (paper.answerKey) {
         if (doc.y > doc.page.height - 150) doc.addPage();
         doc

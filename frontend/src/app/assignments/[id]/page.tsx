@@ -57,6 +57,29 @@ export default function AssignmentDetailPage({ params }: PageProps) {
   }, [id]);
 
   useEffect(() => {
+    if (!assignment) return;
+    if (assignment.status !== "pending" && assignment.status !== "processing") return;
+
+    const interval = setInterval(async () => {
+      try {
+        const data = await getAssignment(id);
+        if (data.status === "completed" || data.status === "failed") {
+          setAssignment(data);
+          setRegenerating(false);
+          clearInterval(interval);
+        } else {
+          setAssignment(data);
+        }
+      } catch (err) {
+        // ignore transient errors, keep polling
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assignment?.status, id]);
+
+  useEffect(() => {
     const socket = getSocket();
 
     const onProgress = (data: { status: string; progress: number; stage?: string }) => {
@@ -241,7 +264,6 @@ export default function AssignmentDetailPage({ params }: PageProps) {
     <>
       <Topbar title="Create New" />
       <div className="flex-1 px-4 md:px-10 py-4 md:py-6 max-w-4xl mx-auto w-full">
-        {/* Header bar */}
         <div className="flex flex-wrap items-center justify-between gap-2 mb-4 md:mb-6">
           <button
             onClick={() => router.push("/assignments")}
@@ -270,7 +292,6 @@ export default function AssignmentDetailPage({ params }: PageProps) {
           </div>
         </div>
 
-        {/* AI Intro */}
         <div className="bg-orange-50 border border-orange-100 rounded-lg p-4 mb-6">
           <p className="text-sm text-gray-700">
             <span className="font-medium">Certainly!</span> Here&apos;s a customized question paper for{" "}
@@ -278,16 +299,13 @@ export default function AssignmentDetailPage({ params }: PageProps) {
           </p>
         </div>
 
-        {/* Paper */}
         <div className="bg-white border border-gray-200 rounded-lg p-5 md:p-12">
-          {/* School Header */}
           <div className="text-center mb-6 pb-6 border-b border-gray-200">
             <h1 className="text-lg md:text-xl font-bold text-gray-900 mb-1">Delhi Public School, Sector-4, Bokaro</h1>
             <p className="text-sm text-gray-700">Subject: {assignment.title}</p>
             {assignment.className && <p className="text-sm text-gray-700">Class: {assignment.className}</p>}
           </div>
 
-          {/* Time + Marks */}
           <div className="flex flex-wrap justify-between gap-2 text-sm text-gray-700 mb-4">
             <span>Time Allowed: 45 minutes</span>
             <span>Maximum Marks: {paper.totalMarks}</span>
@@ -295,7 +313,6 @@ export default function AssignmentDetailPage({ params }: PageProps) {
 
           <p className="text-sm text-gray-700 mb-4">All questions are compulsory unless stated otherwise.</p>
 
-          {/* Student Info */}
           <div className="space-y-2 mb-8 text-sm text-gray-700">
             <p>
               Name: <span className="inline-block border-b border-gray-300 min-w-[200px] ml-2"></span>
@@ -309,7 +326,6 @@ export default function AssignmentDetailPage({ params }: PageProps) {
             </p>
           </div>
 
-          {/* Sections */}
           {paper.sections.map((section, sIdx) => (
             <div key={sIdx} className="mb-8">
               <h2 className="text-base font-bold text-gray-900 text-center mb-1">{section.title}</h2>
@@ -333,7 +349,6 @@ export default function AssignmentDetailPage({ params }: PageProps) {
 
           <p className="text-sm font-medium text-gray-900 mb-6">End of Question Paper</p>
 
-          {/* Answer Key */}
           {paper.answerKey && (
             <div className="pt-6 border-t border-gray-200">
               <h3 className="font-bold text-gray-900 mb-3">Answer Key:</h3>
