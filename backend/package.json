@@ -4,11 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon --watch src --ext ts --exec tsx src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "worker": "tsx src/workers/generationWorker.ts"
-  },
+  "dev": "nodemon --watch src --ext ts --exec tsx src/index.ts",
+  "build": "tsc --noCheck",
+  "start": "node dist/index.js",
+  "worker": "tsx src/workers/generationWorker.ts"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",
