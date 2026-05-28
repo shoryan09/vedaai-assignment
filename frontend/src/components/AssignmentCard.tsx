@@ -5,6 +5,7 @@ import { useState } from "react";
 import { MoreVertical, Eye, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { deleteAssignment } from "@/lib/api";
+import { toast } from "sonner";
 import type { Assignment } from "@/types";
 
 interface Props {
@@ -17,10 +18,23 @@ export default function AssignmentCard({ assignment }: Props) {
   const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (confirm("Delete this assignment?")) {
-      await deleteAssignment(assignment._id);
-      window.location.reload();
-    }
+    toast("Delete this assignment?", {
+  description: "This action cannot be undone.",
+  action: {
+    label: "Delete",
+    onClick: async () => {
+      try {
+        await deleteAssignment(assignment._id);
+        toast.success("Assignment deleted");
+        window.location.reload();
+      } catch (err) {
+        toast.error("Failed to delete");
+      }
+    },
+  },
+  cancel: { label: "Cancel", onClick: () => {} },
+  duration: 5000,
+});
   };
 
   return (

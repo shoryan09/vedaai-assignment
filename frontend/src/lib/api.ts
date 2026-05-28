@@ -51,3 +51,10 @@ export const requestPdf = async (
 export const getPdfDownloadUrl = (assignmentId: string): string => {
   return `${API_BASE}/api/assignments/${assignmentId}/pdf`;
 };
+
+export const regenerateAssignment = async (
+  assignmentId: string
+): Promise<{ assignmentId: string; jobId: string; status: string }> => {
+  const res = await api.post(`/assignments/${assignmentId}/regenerate`);
+  return res.data;
+};

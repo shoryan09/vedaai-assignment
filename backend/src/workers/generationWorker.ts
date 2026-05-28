@@ -9,6 +9,11 @@ import { io } from "../index";
 
 dotenv.config();
 
+const emitStage = (jobId: string | undefined, stage: string, progress: number) => {
+  if (!jobId) return;
+  io.to(`job:${jobId}`).emit("job:progress", { status: "processing", stage, progress });
+};
+
 const startWorker = async () => {
   await connectDB();
   console.log("👷 Worker booting...");
@@ -21,11 +26,18 @@ const startWorker = async () => {
 
       try {
         await Assignment.findByIdAndUpdate(assignmentId, { status: "processing" });
-        io.to(`job:${job.id}`).emit("job:progress", { status: "processing", progress: 20 });
+        emitStage(job.id, "Building structured prompt...", 15);
+
+        // Tiny delay so frontend sees the stage transition smoothly
+        await new Promise((r) => setTimeout(r, 200));
+        emitStage(job.id, "Calling AI model...", 35);
 
         const paper = await generateQuestionPaper(input);
 
-        io.to(`job:${job.id}`).emit("job:progress", { status: "processing", progress: 80 });
+        emitStage(job.id, "Parsing & validating response...", 75);
+        await new Promise((r) => setTimeout(r, 150));
+
+        emitStage(job.id, "Saving to database...", 90);
 
         await Assignment.findByIdAndUpdate(assignmentId, {
           status: "completed",

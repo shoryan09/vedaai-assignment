@@ -4,7 +4,7 @@ import { Sparkles } from "lucide-react";
 import { useAssignmentStore } from "@/store/assignmentStore";
 
 export default function GeneratingState() {
-  const { generationProgress, generationStatus } = useAssignmentStore();
+  const { generationProgress, generationStage } = useAssignmentStore();
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
@@ -20,14 +20,16 @@ export default function GeneratingState() {
         Our AI is crafting questions based on your inputs. This usually takes 5-15 seconds.
       </p>
 
-      <div className="w-full max-w-xs">
+      <div className="w-full max-w-sm">
         <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
           <div
             className="h-full bg-orange-500 rounded-full transition-all duration-500"
-            style={{ width: `${Math.max(generationProgress, 15)}%` }}
+            style={{ width: `${Math.max(generationProgress, 10)}%` }}
           />
         </div>
-        <p className="text-xs text-gray-500 mt-2 text-center capitalize">{generationStatus}...</p>
+        <p className="text-xs text-gray-600 mt-3 text-center min-h-[16px]">
+          {generationStage || "Queueing job..."}
+        </p>
       </div>
     </div>
   );

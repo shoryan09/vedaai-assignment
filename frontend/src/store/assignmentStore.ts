@@ -6,12 +6,14 @@ interface AssignmentState {
   currentAssignment: Assignment | null;
   generationStatus: AssignmentStatus | "idle";
   generationProgress: number;
+  generationStage: string;
   currentJobId: string | null;
 
   setAssignments: (a: Assignment[]) => void;
   setCurrentAssignment: (a: Assignment | null) => void;
   setGenerationStatus: (s: AssignmentStatus | "idle") => void;
   setGenerationProgress: (p: number) => void;
+  setGenerationStage: (s: string) => void;
   setCurrentJobId: (id: string | null) => void;
   updatePaper: (paper: GeneratedPaper) => void;
   reset: () => void;
@@ -22,12 +24,14 @@ export const useAssignmentStore = create<AssignmentState>((set) => ({
   currentAssignment: null,
   generationStatus: "idle",
   generationProgress: 0,
+  generationStage: "",
   currentJobId: null,
 
   setAssignments: (a) => set({ assignments: a }),
   setCurrentAssignment: (a) => set({ currentAssignment: a }),
   setGenerationStatus: (s) => set({ generationStatus: s }),
   setGenerationProgress: (p) => set({ generationProgress: p }),
+  setGenerationStage: (s) => set({ generationStage: s }),
   setCurrentJobId: (id) => set({ currentJobId: id }),
   updatePaper: (paper) =>
     set((state) => ({
@@ -40,6 +44,7 @@ export const useAssignmentStore = create<AssignmentState>((set) => ({
       currentAssignment: null,
       generationStatus: "idle",
       generationProgress: 0,
+      generationStage: "",
       currentJobId: null,
     }),
 }));

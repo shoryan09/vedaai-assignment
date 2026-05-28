@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight, Plus, X, Upload, ChevronDown } from "lucide-reac
 import Topbar from "@/components/Topbar";
 import { createAssignment, uploadFile } from "@/lib/api";
 import { subscribeToJob, getSocket } from "@/lib/socket";
+import { toast } from "sonner";
 import { useAssignmentStore } from "@/store/assignmentStore";
 import { createAssignmentSchema, QUESTION_TYPES } from "@/lib/schemas";
 
@@ -59,7 +60,7 @@ export default function NewAssignmentPage() {
     const isPdf = file.type === "application/pdf" || file.name.endsWith(".pdf");
 
     if (!isTxt && !isPdf) {
-      alert("Please upload a PDF or text file");
+      toast.error("Please upload a PDF or text file");
       return;
     }
 
@@ -76,7 +77,7 @@ export default function NewAssignmentPage() {
       }
     } catch (err) {
       console.error(err);
-      alert("Failed to parse file. Please try a different file.");
+      toast.error("Failed to parse file. Please try a different file.");
     } finally {
       setUploadingFile(false);
     }
@@ -113,9 +114,9 @@ export default function NewAssignmentPage() {
       getSocket();
       subscribeToJob(result.jobId);
 
-      router.push(`/assignments/${result.assignmentId}`);
+    router.push(`/assignments/${result.assignmentId}`);
     } catch (err: any) {
-      alert(`Failed to create assignment: ${err.message}`);
+      toast.error(`Failed to create assignment: ${err.message}`);
       setSubmitting(false);
     }
   };

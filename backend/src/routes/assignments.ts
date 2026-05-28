@@ -99,6 +99,44 @@ router.delete("/:id", async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Internal error" });
   }
 });
+// Regenerate paper (same params, fresh LLM call)
+router.post("/:id/regenerate", async (req: Request, res: Response) => {
+  try {
+    const assignment = await Assignment.findById(req.params.id);
+    if (!assignment) return res.status(404).json({ error: "Not found" });
+
+    // Reset generation + PDF state
+    assignment.status = "pending";
+    assignment.generatedPaper = undefined;
+    assignment.pdfStatus = "none";
+    assignment.pdfBuffer = undefined;
+    assignment.pdfGeneratedAt = undefined;
+    assignment.pdfJobId = undefined;
+    await assignment.save();
+
+    const job = await generationQueue.add("generate", {
+      assignmentId: assignment._id.toString(),
+      title: assignment.title,
+      questionTypes: assignment.questionTypes,
+      additionalInstructions: assignment.additionalInstructions,
+      fileContent: assignment.fileContent,
+    });
+
+    assignment.jobId = job.id;
+    await assignment.save();
+
+    await redisConnection.del("assignments:list");
+
+    return res.status(202).json({
+      assignmentId: assignment._id,
+      jobId: job.id,
+      status: "pending",
+    });
+  } catch (err: any) {
+    console.error("Regenerate failed:", err);
+    return res.status(500).json({ error: "Internal error" });
+  }
+});
 
 // Trigger PDF generation
 router.post("/:id/pdf", async (req: Request, res: Response) => {

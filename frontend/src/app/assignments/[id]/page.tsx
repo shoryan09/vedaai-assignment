@@ -3,10 +3,11 @@
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Download, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 import Topbar from "@/components/Topbar";
 import DifficultyBadge from "@/components/DifficultyBadge";
 import GeneratingState from "@/components/GeneratingState";
-import { getAssignment, requestPdf, getPdfDownloadUrl } from "@/lib/api";
+import { getAssignment, requestPdf, getPdfDownloadUrl, regenerateAssignment } from "@/lib/api";
 import { getSocket, subscribeToJob, subscribeToPdfJob } from "@/lib/socket";
 import { useAssignmentStore } from "@/store/assignmentStore";
 import type { Assignment } from "@/types";
@@ -21,6 +22,7 @@ export default function AssignmentDetailPage({ params }: PageProps) {
   const {
     setGenerationStatus,
     setGenerationProgress,
+    setGenerationStage,
     setCurrentJobId,
     updatePaper,
     reset,
@@ -29,6 +31,7 @@ export default function AssignmentDetailPage({ params }: PageProps) {
   const [assignment, setAssignment] = useState<Assignment | null>(null);
   const [loading, setLoading] = useState(true);
   const [pdfStatus, setPdfStatus] = useState<"idle" | "pending" | "processing" | "ready" | "failed">("idle");
+  const [regenerating, setRegenerating] = useState(false);
 
   const fetchAssignment = async () => {
     try {
@@ -56,33 +59,40 @@ export default function AssignmentDetailPage({ params }: PageProps) {
   useEffect(() => {
     const socket = getSocket();
 
-    const onProgress = (data: { status: string; progress: number }) => {
+    const onProgress = (data: { status: string; progress: number; stage?: string }) => {
       setGenerationStatus(data.status as any);
       setGenerationProgress(data.progress);
+      if (data.stage) setGenerationStage(data.stage);
     };
 
     const onComplete = (data: { assignmentId: string; paper: any }) => {
       if (data.assignmentId === id) {
         updatePaper(data.paper);
         fetchAssignment();
+        if (regenerating) {
+          toast.success("Fresh questions generated");
+        }
+        setRegenerating(false);
       }
     };
 
     const onFailed = (data: { error: string }) => {
       setGenerationStatus("failed");
-      alert(`Generation failed: ${data.error}`);
+      setRegenerating(false);
+      toast.error(`Generation failed: ${data.error}`);
     };
 
     const onPdfComplete = (data: { assignmentId: string; downloadUrl: string }) => {
       if (data.assignmentId === id) {
         setPdfStatus("ready");
         triggerBrowserDownload(getPdfDownloadUrl(id));
+        toast.success("PDF downloaded successfully");
       }
     };
 
     const onPdfFailed = (data: { error: string }) => {
       setPdfStatus("failed");
-      alert(`PDF generation failed: ${data.error}`);
+      toast.error(`PDF generation failed: ${data.error}`);
     };
 
     socket.on("job:progress", onProgress);
@@ -110,6 +120,47 @@ export default function AssignmentDetailPage({ params }: PageProps) {
     document.body.removeChild(a);
   };
 
+  const handleRegenerate = async () => {
+    if (!assignment) return;
+
+    const confirmed = await new Promise<boolean>((resolve) => {
+      toast("Regenerate this paper?", {
+        description: "This will replace the current questions with a fresh set.",
+        action: {
+          label: "Regenerate",
+          onClick: () => resolve(true),
+        },
+        cancel: {
+          label: "Cancel",
+          onClick: () => resolve(false),
+        },
+        duration: 10000,
+        onDismiss: () => resolve(false),
+        onAutoClose: () => resolve(false),
+      });
+    });
+    if (!confirmed) return;
+
+    setRegenerating(true);
+    try {
+      const result = await regenerateAssignment(assignment._id);
+      setCurrentJobId(result.jobId);
+      setGenerationStatus("pending");
+      subscribeToJob(result.jobId);
+
+      setAssignment({
+        ...assignment,
+        status: "pending",
+        generatedPaper: undefined,
+        pdfStatus: "none" as any,
+      } as Assignment);
+    } catch (err) {
+      console.error("Regenerate failed", err);
+      toast.error("Failed to regenerate. Please try again.");
+      setRegenerating(false);
+    }
+  };
+
   const handleDownload = async () => {
     if (!assignment) return;
     setPdfStatus("pending");
@@ -127,7 +178,7 @@ export default function AssignmentDetailPage({ params }: PageProps) {
     } catch (err) {
       console.error("PDF request failed", err);
       setPdfStatus("failed");
-      alert("Failed to start PDF generation.");
+      toast.error("Failed to start PDF generation.");
     }
   };
 
@@ -201,11 +252,12 @@ export default function AssignmentDetailPage({ params }: PageProps) {
           </button>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => router.push("/assignments/new")}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg transition"
+              onClick={handleRegenerate}
+              disabled={regenerating}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg transition disabled:opacity-60"
             >
-              <RefreshCw size={14} />
-              Regenerate
+              <RefreshCw size={14} className={regenerating ? "animate-spin" : ""} />
+              {regenerating ? "Regenerating..." : "Regenerate"}
             </button>
             <button
               onClick={handleDownload}
